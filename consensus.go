@@ -322,9 +322,6 @@ type Consensus struct {
 	// participants is the consensus group, current leader is r % quorum
 	participants []Identity
 
-	// count num of individual identities
-	numIdentities int
-
 	// set to true to enable <commit> message unicast
 	enableCommitUnicast bool
 
@@ -386,13 +383,6 @@ func (c *Consensus) init(config *Config) {
 	c.broadcastRoundChange()
 	// set rcTimeout to lockTimeout
 	c.rcTimeout = config.Epoch.Add(c.roundchangeDuration(0))
-
-	// count number of individual identites
-	ids := make(map[Identity]bool)
-	for _, id := range c.participants {
-		ids[id] = true
-	}
-	c.numIdentities = len(ids)
 }
 
 //  calculates roundchangeDuration
@@ -1198,7 +1188,7 @@ func (c *Consensus) heightSync(height uint64, round uint64, s State, now time.Ti
 }
 
 // t calculates (n-1)/3
-func (c *Consensus) t() int { return (c.numIdentities - 1) / 3 }
+func (c *Consensus) t() int { return (len(c.participants) - 1) / 3 }
 
 // Propose adds a new state to unconfirmed queue to particpate in
 // consensus at next height.
