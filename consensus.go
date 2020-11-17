@@ -1460,7 +1460,7 @@ func (c *Consensus) receiveMessage(bts []byte, now time.Time) error {
 				// NOTE: we proceed the following only when AddCommit returns true.
 				// NumCommitted will only return commits with locked B'
 				// and ignore non-B' commits.
-				if c.currentRound.NumCommitted() >= 2*c.t()+1 {
+				if c.currentRound.NumCommitted() == len(c.participants) {
 					/*
 						log.Println("======= LEADER'S DECIDE=====")
 						log.Println("Height:", c.currentHeight+1)
@@ -1589,9 +1589,19 @@ func (c *Consensus) Update(now time.Time) error {
 		}
 
 		if now.After(c.commitTimeout) {
-			c.currentRound.Stage = stageLockRelease
-			c.lockReleaseTimeout = now.Add(c.lockReleaseDuration(c.currentRound.RoundNumber))
-			c.lockRelease()
+			if c.currentRound.NumCommitted() >= 2*c.t()+1 {
+				// broadcast decide will return what it has sent
+				c.latestProof = c.broadcastDecide()
+				c.heightSync(c.latestHeight+1, c.currentRound.RoundNumber, c.currentRound.LockedState, now)
+				// leader should wait for 1 more latency
+				c.rcTimeout = now.Add(c.roundchangeDuration(0) + c.latency)
+				// broadcast <roundchange> at new height
+				c.broadcastRoundChange()
+			} else {
+				c.currentRound.Stage = stageLockRelease
+				c.lockReleaseTimeout = now.Add(c.lockReleaseDuration(c.currentRound.RoundNumber))
+				c.lockRelease()
+			}
 		}
 
 	case stageLockRelease:

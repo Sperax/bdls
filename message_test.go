@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/ecdsa"
 	"crypto/rand"
-	"encoding/json"
 	"io"
 	mrand "math/rand"
 	"testing"
@@ -1101,15 +1100,4 @@ func BenchmarkSecp256k1Verify(b *testing.B) {
 		_, sp, _ := createRoundChangeMessageSigner(b, 0, 0, nil, privateKey)
 		sp.Verify(S256Curve)
 	}
-}
-
-func TestMessageMarshalJson(t *testing.T) {
-	_, sp, _, _ := createDecideMessage(t, 10, 1, 0, 1, 0)
-	bts, err := json.Marshal(sp)
-	assert.Nil(t, err)
-
-	sp2 := &SignedProto{}
-	err = json.Unmarshal(bts, sp2)
-	assert.Nil(t, err)
-	assert.Equal(t, sp, sp2)
 }
